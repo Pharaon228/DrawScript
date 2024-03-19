@@ -23,19 +23,30 @@ async function main() {
 
         const pages = [];
         for (let i = 0; i < numberOfSessions; i++) {
-            const page = await openPage(i, 'https://web.telegram.org/a/#5499493097');
+            const page = await openPage(i, 'https://web.telegram.org');
             pages.push(page);
         }
 
         // "Play"
-        for (const page of pages) {
-            await clickPlayButton(page);
-        }
+        const clickPlayPromises = pages.map((page, index) => clickPlayButton(page, index + 1));
+        await Promise.all(clickPlayPromises);
 
-        // Открываем ссылку из iframe
+        const waitForButtonPromises = pages.map(page => {
+            return page.waitForSelector('.BlackButtonStyled-sc-155f8n4-0.bXMZJW', { visible: true, timeout: 30000 })
+                .then(() => {
+                    console.log('Кнопка "Закрасить" отобразилась на странице.');
+                })
+                .catch(error => {
+                    console.error('Произошла ошибка при ожидании кнопки "Закрасить":', error);
+                });
+        });
+
+        // Ждем завершения всех промиссов для ожидания появления кнопки "Закрасить"
+        await Promise.all(waitForButtonPromises);
+
         for (const page of pages) {
-            await openIframeLink(page);
-            //await autoDraw(page);
+            //await openIframeLink(page);
+            await autoDraw(page);
             await chooseBooster(page);
         }
 

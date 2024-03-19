@@ -34,17 +34,14 @@ async function chooseBooster(page) {
     const sleep = (milliseconds) => new Promise(resolve => setTimeout(resolve, milliseconds));
 
     while (true) {
-        // Допилить проверку активного бустера Selector class="ActiveBoosterStyled-sc-13defe5-1 jcANjc">
-        const activeBooster = false;
+        const activeBooster = await checkActiveBooster(page);
 
-        if (!activeBooster) {
+        if (activeBooster) {
             console.log('Активный бустер отсутствует. Покупаем бустер...');
 
-            // Открываем магазин
             await page.waitForSelector('a.MenuItem-yi1zwm-1.AgRZi[href="/shop"]');
             await page.click('a.MenuItem-yi1zwm-1.AgRZi[href="/shop"]');
 
-            // Покупаем выбранный бустер
             await page.waitForSelector(chosenBooster.link);
             await page.click(chosenBooster.link);
 
@@ -61,6 +58,12 @@ async function chooseBooster(page) {
         }
     }
 }
+
+async function checkActiveBooster(page) {
+    const hasActiveBooster = !(await page.$('.ActiveBoosterWrapper-sc-13defe5-0.bkpUKH'));
+    return hasActiveBooster;
+}
+
 
 async function ask(question) {
     const readline = require('readline').createInterface({
