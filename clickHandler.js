@@ -17,6 +17,13 @@ async function clickPlayButton(page, sessionIndex) {
                 }
             }
 
+
+            await page.evaluate(() => {
+                window.alert = () => { };
+                window.confirm = () => true;
+                window.prompt = () => { };
+            });
+
             await page.goto(srcValue);
         } else {
             console.log('Прошу запустите игру.');
@@ -38,6 +45,13 @@ async function clickPlayButton(page, sessionIndex) {
 
             const answer = await ask('Хотите запустить AutoDraw Script? (да/нет): ');
             if (answer.toLowerCase() === 'да') {
+
+                await page.evaluate(() => {
+                    window.alert = () => { };
+                    window.confirm = () => true;
+                    window.prompt = () => { };
+                });
+
                 await page.goto(srcValue);
             }
         }
