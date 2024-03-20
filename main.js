@@ -52,7 +52,7 @@ async function main() {
         }
 
         const delayBetweenIterations = 8000; // 8 секунд между итерациями
-        let selectedBooster[];
+        const selectedBooster = {};
         setInterval(async () => {
             for (const { page, id } of pages) {
                 const boosterSelection = boosterSelections[id];
