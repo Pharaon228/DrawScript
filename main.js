@@ -1,6 +1,5 @@
 const { openBrowser, openPage } = require('./historyManager');
 const { clickPlayButton } = require('./clickHandler');
-const openIframeLink = require('./openLink');
 const autoDraw = require('./autoDraw');
 const chooseBooster = require('./chooseBooster');
 const { checkAndPurchaseBooster } = require('./boosterManager');
@@ -48,27 +47,32 @@ async function main() {
 
         const boosterSelections = {};
         const selectedBooster = {};
-
         for (const { page, id } of pages) {
             boosterSelections[id] = { booster: null, asked: false };
             const boosterSelection = boosterSelections[id];
 
             if (!boosterSelection.asked) {
-                const { booster, asked } = await chooseBooster(page, boosterSelection);
+                const { booster, asked } = await chooseBooster(page, boosterSelection, id);
                 boosterSelections[id] = { booster, asked };
                 selectedBooster[id] = booster;
             }
         }
 
-        const delayBetweenIterations = 8000; // 8 секунд между итерациями
+        const delayBetweenIterations = 8000;
+
+        let clickCounters = new Array(numberOfSessions).fill(0);
 
         setInterval(async () => {
             for (const { page, id } of pages) {
                 const boosterSelection = boosterSelections[id];
-                if (boosterSelection.asked) {
-                    await checkAndPurchaseBooster(page, selectedBooster[id]);
+                clickCounter = clickCounters[id];
+                if ((boosterSelection.asked)) {
+                    clickCounter = await checkAndPurchaseBooster(page, selectedBooster[id], clickCounter, id);
+                    clickCounters[id] = clickCounter;
                 }
-                await autoDraw(page);
+
+                clickCounter = await autoDraw(page, clickCounter);
+                clickCounters[id] = clickCounter;
             }
         }, delayBetweenIterations);
 
@@ -78,4 +82,6 @@ async function main() {
 
 main().catch(error => {
     console.error('Произошла ошибка:', error);
+
 });
+

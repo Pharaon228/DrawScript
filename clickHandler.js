@@ -28,7 +28,7 @@ async function clickPlayButton(page, sessionIndex, attempt = 1) {
         } else {
             console.log('Прошу запустите игру.');
 
-            const selector = '.zA1w1IOq';
+            const selector = 'iframe';
             const timeout = 1200000;
 
             // Ждем появления iframe

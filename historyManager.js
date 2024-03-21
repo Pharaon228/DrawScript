@@ -1,13 +1,23 @@
 const puppeteer = require('puppeteer');
+const fs = require('fs');
 
 let browsers = [];
 
 async function openBrowser(numberOfSessions) {
     for (let i = 0; i < numberOfSessions; i++) {
+        let headless = false;
+
+
+        const srcValueFileName = `./user-data-dir${i + 1}/srcValue.txt`;
+        if (fs.existsSync(srcValueFileName)) {
+            headless = true;
+        }
+
         const browser = await puppeteer.launch({
-            headless: false,
-            userDataDir: `./user-data-dir${i + 1}` // Создаем отдельную папку для каждой сессии
+            headless: headless,
+            userDataDir: `./user-data-dir${i + 1}`
         });
+
         browsers.push(browser);
     }
 }
