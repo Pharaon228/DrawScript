@@ -1,3 +1,4 @@
+const fs = require('fs');
 async function autoDraw(page) {
     try {
         const button = await page.waitForSelector('.BlackButtonStyled-sc-155f8n4-0.bXMZJW', { visible: true, timeout: 3000 });
@@ -11,6 +12,10 @@ async function autoDraw(page) {
             return false;
         }
     } catch (error) {
+        const htmlContent = await page.content();
+
+        // Записываем HTML-код в файл
+        fs.writeFileSync('page_after_click.html', htmlContent, 'utf8');
         // console.error('Кнопка "Закрасить"пока не найдена. Ожидание');
         return false;
     }

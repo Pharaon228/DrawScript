@@ -29,8 +29,9 @@ async function main() {
         }
 
         // "Play"
-        const clickPlayPromises = pages.map(({ page, id }) => clickPlayButton(page, id + 1));
-        await Promise.all(clickPlayPromises);
+        for (const { page, id } of pages) {
+            await clickPlayButton(page, id + 1);
+        }
 
         const waitForButtonPromises = pages.map(({ page }) => {
             return page.waitForSelector('.BlackButtonStyled-sc-155f8n4-0.bXMZJW', { visible: true, timeout: 30000 })
@@ -46,22 +47,24 @@ async function main() {
         await Promise.all(waitForButtonPromises);
 
         const boosterSelections = {};
+        const selectedBooster = {};
 
-        for (const { id } of pages) {
+        for (const { page, id } of pages) {
             boosterSelections[id] = { booster: null, asked: false };
+            const boosterSelection = boosterSelections[id];
+
+            if (!boosterSelection.asked) {
+                const { booster, asked } = await chooseBooster(page, boosterSelection);
+                boosterSelections[id] = { booster, asked };
+                selectedBooster[id] = booster;
+            }
         }
 
         const delayBetweenIterations = 8000; // 8 секунд между итерациями
-        const selectedBooster = {};
+
         setInterval(async () => {
             for (const { page, id } of pages) {
                 const boosterSelection = boosterSelections[id];
-
-                if (!boosterSelection.asked) {
-                    const { booster, asked } = await chooseBooster(page, boosterSelection);
-                    boosterSelections[id] = { booster, asked };
-                    selectedBooster[id] = booster;
-                }
                 if (boosterSelection.asked) {
                     await checkAndPurchaseBooster(page, selectedBooster[id]);
                 }
