@@ -31,22 +31,9 @@ async function checkAndPurchaseBooster(page, chosenBooster, clickCounter, id) {
         } за время работы бустера было совершено ${clickCounter} нажатий.`
       );
 
-<<<<<<< HEAD
-      await page.waitForSelector('.BlackButtonStyled-sc-155f8n4-0.gvlQbP');
-      await page.click('.BlackButtonStyled-sc-155f8n4-0.gvlQbP');
-
-      console.log(`Бустер ${chosenBooster.level} уровня успешно куплен.`);
-      console.log('\x1b[33m%s\x1b[0m', `Для сессии ${id + 1} Текущий баланс: ${balance}.`);
-      console.log(`Для сессии ${id + 1} за время работы бустера было совершено ${clickCounter} нажатий.`);
-
-      await delay(1000);
-      clickCounter = 0;
-      return clickCounter;
-=======
       await delay(500);
       clickCounter = 0;
       return clickCounter;
->>>>>>> 2de1fcd0a6b41d9bdb2dce5e26100c8287734f2f
     } else {
       if (clickCounter % 20 === 0 || clickCounter === 0) {
         console.log(
@@ -58,18 +45,8 @@ async function checkAndPurchaseBooster(page, chosenBooster, clickCounter, id) {
         );
       }
 
-<<<<<<< HEAD
-      if ((clickCounter % 20 === 0) || (clickCounter === 0)) {
-        console.log('\x1b[33m%s\x1b[0m', `Для сессии ${id + 1} Текущий баланс: ${balance}.`);
-        console.log(`Для сессии ${id + 1} было совершено ${clickCounter} нажатий.`);
-      }
-
       //console.log('На данный момент активный бустер уже имеется. Повторная попытка покупки позже.');
       return clickCounter;
-=======
-      //console.log('На данный момент активный бустер уже имеется. Повторная попытка покупки позже.');
-      return clickCounter;
->>>>>>> 2de1fcd0a6b41d9bdb2dce5e26100c8287734f2f
     }
   } catch {
     console.log("ожидание");

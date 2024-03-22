@@ -9,19 +9,24 @@ async function autoDraw(page, clickCounter, clickFailedCounter) {
             //console.log('Кнопка "Закрасить" нажата.');
 
             clickCounter++;
-			clickFailedCounter=0;
+            clickFailedCounter = 0;
             //console.log(`Счетчик нажатий: ${clickCounter}`);
-    return { clickCounter, clickFailedCounter };
+            return { clickCounter, clickFailedCounter };
         } else {
             console.log('Кнопка "Закрасить" не найдена.');
-    return { clickCounter, clickFailedCounter };
+            return { clickCounter, clickFailedCounter };
         }
     } catch (error) {
         const htmlContent = await page.content();
-		clickFailedCounter++;
+        clickFailedCounter++;
+
+        if (clickFailedCounter % 5 === 0) {
+            console.error(`Произошло ${clickFailedCounter}неудачных попыток нажатия кнопки "Закрасить"`);
+        }
+
         fs.writeFileSync('page_after_click.html', htmlContent, 'utf8');
         // console.error('Кнопка "Закрасить"пока не найдена. Ожидание');
-    return { clickCounter, clickFailedCounter };
+        return { clickCounter, clickFailedCounter };
     }
 }
 
