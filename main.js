@@ -1,11 +1,13 @@
-const { openBrowser, openPage } = require('./historyManager');
+const { openBrowser, openPage, closeBrowsers } = require('./historyManager');
 const { clickPlayButton } = require('./clickHandler');
 const autoDraw = require('./autoDraw');
 const chooseBooster = require('./chooseBooster');
 const { checkAndPurchaseBooster } = require('./boosterManager');
 
 
-async function runSessions(numberOfSessions, boosterSelections) {
+async function runSessions(numberOfSessionsHost, boosterSelections) {
+    let numberOfSessions = numberOfSessionsHost;
+
     if (numberOfSessions === 0) {
         const readline = require('readline');
         const rl = readline.createInterface({
@@ -13,16 +15,21 @@ async function runSessions(numberOfSessions, boosterSelections) {
             output: process.stdout
         });
 
-        rl.question('Сколько сессий вы хотите создать? ', async (numberOfSessions) => {
-            numberOfSessions = parseInt(numberOfSessions);
-            if (isNaN(numberOfSessions) || numberOfSessions <= 0) {
-                console.error('Введите корректное число сессий.');
-                rl.close();
-                return;
-            }
-            rl.close();
+        numberOfSessions = await new Promise((resolve, reject) => {
+            rl.question('Сколько сессий вы хотите создать? ', (numberOfSessions) => {
+                numberOfSessions = parseInt(numberOfSessions);
+                if (isNaN(numberOfSessions) || numberOfSessions <= 0) {
+                    console.error('Введите корректное число сессий.');
+                    rl.close();
+                    reject(new Error('Некорректное количество сессий'));
+                } else {
+                    rl.close();
+                    resolve(numberOfSessions);
+                }
+            });
         });
     }
+
     await openBrowser(numberOfSessions);
 
     const pages = [];
@@ -78,19 +85,22 @@ async function runSessions(numberOfSessions, boosterSelections) {
             clickCounters[id] = clickCounter;
         }
     }, delayBetweenIterations);
-
-
-
+    return { numberOfSessions, boosterSelections };
 }
 async function main() {
+    let numberOfSessionsHost = 0;
+    let boosterSelections = {};
     try {
-        await runSessions(numberOfSessions, boosterSelections);
+        const result = await runSessions(numberOfSessionsHost, boosterSelections);
+        numberOfSessionsHost = result.numberOfSessions;
+        boosterSelections = result.boosterSelections;
+        //console.log(numberOfSessionsHost, ' ', boosterSelections);
     } catch (error) {
         console.error('\x1b[31m%s\x1b[0m', 'Произошла ошибка:', error);
         console.log('Закрытие браузеров...');
-        puppeteer.close();
+        await closeBrowsers();
         console.log('Повторный запуск с сохраненными данными...');
-        await runSessions(numberOfSessions, boosterSelections);
+        await runSessions(numberOfSessionsHost, boosterSelections);
     }
 }
 

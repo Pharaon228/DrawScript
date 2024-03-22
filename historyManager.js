@@ -22,6 +22,12 @@ async function openBrowser(numberOfSessions) {
     }
 }
 
+async function closeBrowsers() {
+    for (browser of browsers) {
+        await browser.close();
+    }
+}
+
 async function openPage(sessionIndex, url) {
     if (!browsers[sessionIndex]) {
         console.error('Браузер для указанной сессии не найден.');
@@ -36,5 +42,6 @@ async function openPage(sessionIndex, url) {
 
 module.exports = {
     openBrowser,
-    openPage
+    openPage,
+    closeBrowsers
 };
