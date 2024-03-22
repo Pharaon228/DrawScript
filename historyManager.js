@@ -23,8 +23,8 @@ async function openBrowser(numberOfSessions) {
 }
 
 async function closeBrowsers() {
-    for (browser of browsers) {
-        await browser.close();
+    for (let i = 0; i < numberOfSessions; i++) {
+        await browsers[sessionIndex].close();
     }
 }
 
