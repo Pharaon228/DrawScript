@@ -39,7 +39,7 @@ async function runSessions(numberOfSessions, boosterSelections) {
     const waitForButtonPromises = pages.map(({ page }) => {
         return page.waitForSelector('.BlackButtonStyled-sc-155f8n4-0.bXMZJW', { visible: true, timeout: 30000 })
             .then(() => {
-                console.log('Кнопка "Закрасить" отобразилась на странице.');
+                console.log('\x1b[32m%s\x1b[0m', 'Кнопка "Закрасить" отобразилась на странице.');
             })
             .catch(error => {
                 console.error('Произошла ошибка при ожидании кнопки "Закрасить":', error);
@@ -86,7 +86,7 @@ async function main() {
     try {
         await runSessions(numberOfSessions, boosterSelections);
     } catch (error) {
-        console.error('Произошла ошибка:', error);
+        console.error('\x1b[31m%s\x1b[0m', 'Произошла ошибка:', error);
         console.log('Закрытие браузеров...');
         puppeteer.close();
         console.log('Повторный запуск с сохраненными данными...');
@@ -95,7 +95,7 @@ async function main() {
 }
 
 main().catch(error => {
-    console.error('Произошла ошибка:', error);
+    console.error('\x1b[31m%s\x1b[0m', 'Произошла ошибка:', error);
 
 });
 
