@@ -158,9 +158,9 @@ async function runSessions(
     let clickFailedCounters = new Array(numberOfSessions).fill(0);
     let boosterChecks = new Array(numberOfSessions).fill(0);
     let countOfBoosters = new Array(numberOfSessions).fill(0);
-
+    const promises = [];
     async function runIterations() {
-      const promises = [];
+
       for (const { page, id } of pages) {
         //console.log(`Starting new itteration for session: ${id + 1}`);
         const promise1 = checkAndPurchaseBooster(
@@ -185,12 +185,9 @@ async function runSessions(
       }
 
       try {
-        const results = await Promise.race([
-          Promise.all(promises),
-          timeout(30000),
-        ]);
+        const results = await Promise.all(promises)
         console.log(results);
-        if (results != true || errorFlag > 0) {
+        if (results != true && errorFlag === 0) {
           let index = 0;
           for (const { page, id } of pages) {
             if (boosterSelections[id].asked) {

@@ -11,6 +11,8 @@ async function checkAndPurchaseBooster(
   if (balance >= chosenBooster.cost && chosenBooster.level != "без бустера") {
     if (boosterCheck > 24 || boosterCheck === 0) {
       try {
+        let boosterLinkButton = false;
+        let confirmButton = false;
         console.log(
           "\x1b[32m%s\x1b[0m",
           "Активный бустер отсутствует. Покупаем бустер..."
@@ -24,29 +26,33 @@ async function checkAndPurchaseBooster(
           await page.click('a.MenuItem-yi1zwm-1.AgRZi[href="/shop"]');
           await delay(1000);
         }
-        const boosterLinkButton = await page.waitForSelector(
-          chosenBooster.link,
-          { timeout: 5000 }
-        );
-        if (boosterLinkButton) {
-          await page.click(chosenBooster.link);
+        if (shopButton) {
+          boosterLinkButton = await page.waitForSelector(
+            chosenBooster.link,
+            { timeout: 5000 }
+          );
+          if (boosterLinkButton) {
+            await page.click(chosenBooster.link);
+          }
         }
-
-        const confirmButton = await page.waitForSelector(
-          ".BlackButtonStyled-sc-155f8n4-0.gvlQbP",
-          { timeout: 5000 }
-        );
-        if (confirmButton) {
-          await page.click(".BlackButtonStyled-sc-155f8n4-0.gvlQbP");
+        if (boosterLinkButton && shopButton) {
+          confirmButton = await page.waitForSelector(
+            ".BlackButtonStyled-sc-155f8n4-0.gvlQbP",
+            { timeout: 5000 }
+          );
+          if (confirmButton) {
+            await page.click(".BlackButtonStyled-sc-155f8n4-0.gvlQbP");
+          }
         }
-        console.log(`Бустер ${chosenBooster.level} уровня успешно куплен.`);
+        if (confirmButton && boosterLinkButton && shopButton) {
+          console.log(`Бустер ${chosenBooster.level} уровня успешно куплен.`);
+        }
         console.log(
           "\x1b[33m%s\x1b[0m",
           `Для сессии ${id + 1} Текущий баланс: ${balance}.`
         );
         console.log(
-          `Для сессии ${
-            id + 1
+          `Для сессии ${id + 1
           } за время работы было совершено ${clickCounter} нажатий.`
         );
         return { boosterCheck: 1 };
