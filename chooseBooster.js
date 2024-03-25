@@ -39,12 +39,16 @@ async function chooseBooster(page, boosterSelections, id) {
   }
 }
 async function getBalanceAndChoices(page, id) {
-  await page.waitForSelector(".AnimatedNumberStyled-sc-98h1so-0.kSpFWd");
-  const balanceText = await page.$eval(
-    ".AnimatedNumberStyled-sc-98h1so-0.kSpFWd",
-    (span) => span.textContent
-  );
-  const balance = parseInt(balanceText.replace(/\D/g, ""), 10);
+  let balance = 0;
+  balanceValue = await page.waitForSelector(".AnimatedNumberStyled-sc-98h1so-0.kSpFWd", { timeout: 5000 });
+  if (balanceValue) {
+    const balanceText = await page.$eval(
+      ".AnimatedNumberStyled-sc-98h1so-0.kSpFWd",
+      (span) => span.textContent
+    );
+    balance = parseInt(balanceText.replace(/\D/g, ""), 10);
+  }
+
 
   const choices = [
     { level: "без бустера", cost: 0, link: "" },
@@ -74,16 +78,13 @@ async function getBalanceAndChoices(page, id) {
     const purchases = Math.floor(balance / choice.cost);
     if (purchases > 0 && choice.level != "без бустера") {
       console.log(
-        `Для ${id + 1} сессии Бустер ${
-          choice.level
-        } уровня доступен. Можно купить ${purchases} штук. Продолжительность работы: ${
-          purchases * 3
+        `Для ${id + 1} сессии Бустер ${choice.level
+        } уровня доступен. Можно купить ${purchases} штук. Продолжительность работы: ${purchases * 3
         } минут.`
       );
     } else if (choice.level != "без бустера") {
       console.log(
-        `Для ${id + 1} сессии Бустер ${
-          choice.level
+        `Для ${id + 1} сессии Бустер ${choice.level
         }сессии уровня не доступен. Недостаточно средств.`
       );
     }

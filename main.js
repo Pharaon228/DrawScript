@@ -142,7 +142,8 @@ async function runSessions(
         boosterSelections[id] = { booster, asked };
       }
     }
-    let errorFlag = false;
+    let errorFlag = 0;
+    attemptItterations = 0;
     //логика автокликера
     function timeout(ms) {
       return new Promise((resolve, reject) => {
@@ -188,8 +189,8 @@ async function runSessions(
           Promise.all(promises),
           timeout(30000),
         ]);
-        //console.log(results);
-        if (results != true) {
+        console.log(results);
+        if (results != true || errorFlag > 0) {
           let index = 0;
           for (const { page, id } of pages) {
             if (boosterSelections[id].asked) {
@@ -205,20 +206,20 @@ async function runSessions(
             clickCounters[id] = clickCounter;
             clickFailedCounters[id] = clickFailedCounter;
             if (clickFailedCounters[id] > 6) {
-              errorFlag = true;
+              errorFlag++;
             }
           }
-          //console.log(`Промисы были разрешены`);
+          console.log(`Error flag: ${errorFlag}`);
         } else {
           console.log(`Таймаут промисов`);
-          if (errorFlag || results == true) {
+          if (errorFlag > 0 || results == true) {
             console.error(
               "\x1b[31m%s\x1b[0m",
               "Произошла ошибка нажатий:",
               error
             );
             console.log("Закрытие браузеров...");
-            errorFlag = true;
+            errorFlag++;
             await runSessions(
               numberOfSessions,
               boosterSelections,
@@ -229,7 +230,10 @@ async function runSessions(
       } catch (error) {
         console.error("Произошла ошибка:", error);
       }
-      if (!errorFlag) {
+      if (errorFlag > 0) {
+        attemptItterations++;
+      }
+      if (attemptItterations < 2) {
         setTimeout(runIterations, delayBetweenIterations);
       }
     }
