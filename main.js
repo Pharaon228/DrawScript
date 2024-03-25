@@ -158,9 +158,9 @@ async function runSessions(
     let clickFailedCounters = new Array(numberOfSessions).fill(0);
     let boosterChecks = new Array(numberOfSessions).fill(0);
     let countOfBoosters = new Array(numberOfSessions).fill(0);
-    const promises = [];
+    let promises = [];
     async function runIterations() {
-
+      promises = [];
       for (const { page, id } of pages) {
         //console.log(`Starting new itteration for session: ${id + 1}`);
         const promise1 = checkAndPurchaseBooster(
