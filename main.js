@@ -159,6 +159,9 @@ async function runSessions(
     let boosterChecks = new Array(numberOfSessions).fill(0);
     let countOfBoosters = new Array(numberOfSessions).fill(0);
     let promises = [];
+    console.log(clickCounters);
+    console.log(clickFailedCounters);
+    console.log(boosterChecks);
     async function runIterations() {
       promises = [];
       for (const { page, id } of pages) {
@@ -230,9 +233,21 @@ async function runSessions(
       if (errorFlag > 0) {
         attemptItterations++;
       }
-      if (attemptItterations < 2) {
-        setTimeout(runIterations, delayBetweenIterations);
+      if (attemptItterations > 0) {
+        console.error(
+          "\x1b[31m%s\x1b[0m",
+          "Произошла ошибка нажатий:",
+          error
+        );
+        console.log("Закрытие браузеров...");
+        errorFlag++;
+        await runSessions(
+          numberOfSessions,
+          boosterSelections,
+          attempts + 1
+        );
       }
+      else { setTimeout(runIterations, delayBetweenIterations); }
     }
 
     runIterations();
