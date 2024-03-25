@@ -5,7 +5,12 @@ const chooseBooster = require("./chooseBooster");
 const { checkAndPurchaseBooster } = require("./boosterManager");
 const { error } = require("console");
 
-async function runSessions(numberOfSessionsHost, boosterSelectionsHost, attemptsHost, firstBoosterSelections) {
+async function runSessions(
+  numberOfSessionsHost,
+  boosterSelectionsHost,
+  attemptsHost,
+  firstBoosterSelections
+) {
   numberOfSessions = numberOfSessionsHost;
   boosterSelections = boosterSelectionsHost;
   attempts = attemptsHost;
@@ -20,17 +25,20 @@ async function runSessions(numberOfSessionsHost, boosterSelectionsHost, attempts
       });
 
       numberOfSessions = await new Promise((resolve, reject) => {
-        rl.question("Сколько сессий вы хотите создать? ", (numberOfSessions) => {
-          numberOfSessions = parseInt(numberOfSessions);
-          if (isNaN(numberOfSessions) || numberOfSessions <= 0) {
-            console.error("Введите корректное число сессий.");
-            rl.close();
-            reject(new Error("Некорректное количество сессий"));
-          } else {
-            rl.close();
-            resolve(numberOfSessions);
+        rl.question(
+          "Сколько сессий вы хотите создать? ",
+          (numberOfSessions) => {
+            numberOfSessions = parseInt(numberOfSessions);
+            if (isNaN(numberOfSessions) || numberOfSessions <= 0) {
+              console.error("Введите корректное число сессий.");
+              rl.close();
+              reject(new Error("Некорректное количество сессий"));
+            } else {
+              rl.close();
+              resolve(numberOfSessions);
+            }
           }
-        });
+        );
       });
     }
     //логика открытия браузеров
@@ -48,8 +56,8 @@ async function runSessions(numberOfSessionsHost, boosterSelectionsHost, attempts
     // логика нажатия кнопки "Play"
     for (const { page, id } of pages) {
       await clickPlayButton(page, id + 1);
-      page.on('dialog', async dialog => {
-        console.log('Диалоговое окно обнаружено:', dialog.message());
+      page.on("dialog", async (dialog) => {
+        console.log("Диалоговое окно обнаружено:", dialog.message());
         await dialog.accept();
       });
     }
@@ -84,22 +92,29 @@ async function runSessions(numberOfSessionsHost, boosterSelectionsHost, attempts
       // await closeBrowsers(numberOfSessions);
       console.log("Повторный запуск с сохраненными данными...");
 
-      await runSessions(numberOfSessions, boosterSelections, attempts + 1, firstBoosterSelections);
+      await runSessions(
+        numberOfSessions,
+        boosterSelections,
+        attempts + 1,
+        firstBoosterSelections
+      );
     }
 
     async function checkAndClickContinueButton(page, id) {
-      const buttonSelector = '.BlackButtonStyled-sc-155f8n4-0.gvlQbP:not([disabled]';
+      const buttonSelector =
+        ".BlackButtonStyled-sc-155f8n4-0.gvlQbP:not([disabled]";
       try {
-        const button = await page.waitForSelector(buttonSelector, { timeout: 5000 });
+        const button = await page.waitForSelector(buttonSelector, {
+          timeout: 5000,
+        });
 
         if (button) {
           await button.click();
           console.log(`для сессии ${id + 1} нажата кнопка "Clain Reward"`);
         } else {
-          console.log('...');
+          console.log("...");
         }
-      }
-      catch (error) {
+      } catch (error) {
         console.error(`для сессии ${id + 1} отсутствует кнопка "Clain Reward"`);
       }
     }
@@ -127,6 +142,7 @@ async function runSessions(numberOfSessionsHost, boosterSelectionsHost, attempts
         boosterSelections[id] = { booster, asked };
       }
     }
+    let errorFlag = false;
     //логика автокликера
     function timeout(ms) {
       return new Promise((resolve, reject) => {
@@ -145,7 +161,7 @@ async function runSessions(numberOfSessionsHost, boosterSelectionsHost, attempts
     async function runIterations() {
       const promises = [];
       for (const { page, id } of pages) {
-        console.log(`Starting new itteration for session: ${id + 1}`);
+        //console.log(`Starting new itteration for session: ${id + 1}`);
         const promise1 = checkAndPurchaseBooster(
           page,
           boosterSelections[id].booster,
@@ -156,7 +172,7 @@ async function runSessions(numberOfSessionsHost, boosterSelectionsHost, attempts
         );
         promises.push(promise1);
 
-        console.log('Done checkAndPurchaseBooster for session:', id + 1);
+        //console.log("Done checkAndPurchaseBooster for session:", id + 1);
 
         const promise2 = autoDraw(
           page,
@@ -164,61 +180,72 @@ async function runSessions(numberOfSessionsHost, boosterSelectionsHost, attempts
           clickFailedCounters[id]
         );
         promises.push(promise2);
-        console.log('Done autoDraw for session:', id + 1);
-
+        //console.log("Done autoDraw for session:", id + 1);
       }
 
       try {
         const results = await Promise.race([
           Promise.all(promises),
-          timeout(30000)
+          timeout(30000),
         ]);
         //console.log(results);
         if (results != true) {
           let index = 0;
           for (const { page, id } of pages) {
             if (boosterSelections[id].asked) {
-              const { clickCounter, boosterCheck, countOfBooster } = results[index];
+              const { clickCounter, boosterCheck, countOfBooster } =
+                results[index];
               clickCounters[id] = clickCounter;
               boosterChecks[id] = boosterCheck;
               index++;
-              console.log(`Для сессий ${id + 1} выполнено ${boosterCheck} проверок сосояния бустеров`);
             }
 
             const { clickCounter, clickFailedCounter } = results[index];
             index++;
             clickCounters[id] = clickCounter;
             clickFailedCounters[id] = clickFailedCounter;
-            console.log(`Для сессий ${id + 1} выполнено ${clickCounter} кликов`);
-            console.log(`Для сессий ${id + 1} выполнено ${clickFailedCounter} неверных нажатий`);
+            if (clickFailedCounters[id] > 6) {
+              errorFlag = true;
+            }
           }
-          console.log(`Промисы были разрешены`);
+          //console.log(`Промисы были разрешены`);
         } else {
           console.log(`Таймаут промисов`);
-          if ((clickFailedCounters[0] > 6) || (results == true)) {
-            console.error("\x1b[31m%s\x1b[0m", "Произошла ошибка нажатий:", error);
+          if (errorFlag || results == true) {
+            console.error(
+              "\x1b[31m%s\x1b[0m",
+              "Произошла ошибка нажатий:",
+              error
+            );
             console.log("Закрытие браузеров...");
-
-            await runSessions(numberOfSessions, boosterSelections, attempts + 1);
+            errorFlag = true;
+            await runSessions(
+              numberOfSessions,
+              boosterSelections,
+              attempts + 1
+            );
           }
         }
       } catch (error) {
-        console.error('Произошла ошибка:', error);
+        console.error("Произошла ошибка:", error);
       }
-
-      setTimeout(runIterations, delayBetweenIterations);
+      if (!errorFlag) {
+        setTimeout(runIterations, delayBetweenIterations);
+      }
     }
 
-
     runIterations();
-
-  }
-  catch (error) {
+  } catch (error) {
     console.error("\x1b[31m%s\x1b[0m", "Произошла ошибка:", error);
     console.log("Закрытие браузеров...");
 
     console.log("Повторный запуск с сохраненными данными...");
-    await runSessions(numberOfSessions, boosterSelections, attempts + 1, firstBoosterSelections);
+    await runSessions(
+      numberOfSessions,
+      boosterSelections,
+      attempts + 1,
+      firstBoosterSelections
+    );
   }
 }
 async function main() {
@@ -227,13 +254,15 @@ async function main() {
   let firstBoosterSelections = boosterSelectionsHost;
   let attemptsHost = 0;
   try {
-    const { numberOfSessions, boosterSelections, attempts } =
-      await runSessions(numberOfSessionsHost,
-        boosterSelectionsHost, attemptsHost, firstBoosterSelections);
+    const { numberOfSessions, boosterSelections, attempts } = await runSessions(
+      numberOfSessionsHost,
+      boosterSelectionsHost,
+      attemptsHost,
+      firstBoosterSelections
+    );
     numberOfSessionsHost = numberOfSessions;
     boosterSelectionsHost = boosterSelections;
     attemptsHost = attempts;
-
   } catch (error) {
     // console.error("\x1b[31m%s\x1b[0m", "Произошла ошибка:", error);
   }
