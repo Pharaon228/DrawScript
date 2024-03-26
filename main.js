@@ -4,6 +4,10 @@ const autoDraw = require("./autoDraw");
 const chooseBooster = require("./chooseBooster");
 const { checkAndPurchaseBooster } = require("./boosterManager");
 const { error } = require("console");
+const { getNumberOfSessions } = require("./userInputManager");
+const { waitForButton } = require("./waitForButtonManager");
+const { checkAndClickContinueButton } = require("./clickContinueButtonManager");
+const { manageBoosterSelections } = require("./boosterSelectionManager");
 
 async function runSessions(
   numberOfSessionsHost,
@@ -11,48 +15,33 @@ async function runSessions(
   attemptsHost,
   firstBoosterSelections
 ) {
-  numberOfSessions = numberOfSessionsHost;
-  boosterSelections = boosterSelectionsHost;
-  attempts = attemptsHost;
+  let numberOfSessions = numberOfSessionsHost;
+  let boosterSelections = boosterSelectionsHost;
+  let attempts = attemptsHost;
   try {
-    //console.log(`Количество сессий: ${numberOfSessions}`);
+
     //логика получения количества сессий
     if (numberOfSessions === 0) {
-      const readline = require("readline");
-      const rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout,
-      });
-
-      numberOfSessions = await new Promise((resolve, reject) => {
-        rl.question(
-          "Сколько сессий вы хотите создать? ",
-          (numberOfSessions) => {
-            numberOfSessions = parseInt(numberOfSessions);
-            if (isNaN(numberOfSessions) || numberOfSessions <= 0) {
-              console.error("Введите корректное число сессий.");
-              rl.close();
-              reject(new Error("Некорректное количество сессий"));
-            } else {
-              rl.close();
-              resolve(numberOfSessions);
-            }
-          }
-        );
-      });
+      try {
+        numberOfSessions = await getNumberOfSessions();
+      } catch (error) {
+        console.error("Произошла ошибка:", error);
+        return;
+      }
     }
+
     //логика открытия браузеров
     if (attempts === 0) {
       await openBrowser(numberOfSessions);
     }
+
     //логика открытия страниц
     const pages = [];
-
     for (let i = 0; i < numberOfSessions; i++) {
       const page = await openPage(i, "https://web.telegram.org");
-
       pages.push({ id: i, page });
     }
+
     // логика нажатия кнопки "Play"
     for (const { page, id } of pages) {
       await clickPlayButton(page, id + 1);
@@ -62,36 +51,20 @@ async function runSessions(
       });
     }
 
-    //логика ожидания появления кнопки "Закрасить"
+    // Логика ожидания появления кнопки "Закрасить"
     let failedLoad = 0;
-    const waitForButtonPromises = pages.map(({ page }) => {
-      return page
-        .waitForSelector(".BlackButtonStyled-sc-155f8n4-0.bXMZJW", {
-          visible: true,
-          timeout: 40000,
-        })
-        .then(() => {
-          console.log(
-            "\x1b[32m%s\x1b[0m",
-            'Кнопка "Закрасить" отобразилась на странице.'
-          );
-        })
-        .catch((error) => {
-          console.error('Произошла ошибка при ожидании кнопки "Закрасить":');
-          failedLoad++;
-        });
-    });
+    try {
+      failedLoad = await waitForButton(pages);
+    } catch (error) {
+      console.error("Произошла ошибка при ожидании кнопки:", error);
+      return;
+    }
 
-    // Ждем завершения всех промиссов для ожидания появления кнопки "Закрасить"
-
-    await Promise.all(waitForButtonPromises);
 
     if (failedLoad != 0) {
       console.error("\x1b[31m%s\x1b[0m", "Произошла ошибка запуска:", error);
       console.log("Закрытие браузеров...");
-      // await closeBrowsers(numberOfSessions);
       console.log("Повторный запуск с сохраненными данными...");
-
       await runSessions(
         numberOfSessions,
         boosterSelections,
@@ -100,24 +73,7 @@ async function runSessions(
       );
     }
 
-    async function checkAndClickContinueButton(page, id) {
-      const buttonSelector =
-        ".BlackButtonStyled-sc-155f8n4-0.gvlQbP:not([disabled]";
-      try {
-        const button = await page.waitForSelector(buttonSelector, {
-          timeout: 5000,
-        });
-
-        if (button) {
-          await button.click();
-          console.log(`для сессии ${id + 1} нажата кнопка "Clain Reward"`);
-        } else {
-          console.log("...");
-        }
-      } catch (error) {
-        console.error(`для сессии ${id + 1} отсутствует кнопка "Clain Reward"`);
-      }
-    }
+    //логика Claiming Reward
     for (const { page, id } of pages) {
       await checkAndClickContinueButton(page, id);
     }
@@ -127,64 +83,32 @@ async function runSessions(
       askedFlag = false;
     }
 
-    for (const { page, id } of pages) {
-      if (attempts === 0 || !askedFlag) {
-        boosterSelections[id] = { booster: null, asked: false };
-      }
-      const boosterSelection = boosterSelections[id];
+    boosterSelections = await manageBoosterSelections(
+      pages,
+      boosterSelectionsHost,
+      attemptsHost,
+      firstBoosterSelections
+    );
 
-      if (!boosterSelection.asked) {
-        const { booster, asked } = await chooseBooster(
-          page,
-          boosterSelection,
-          id
-        );
-        boosterSelections[id] = { booster, asked };
-      }
-    }
-    let errorFlag = 0;
-    attemptItterations = 0;
+
     //логика автокликера
-    function timeout(ms) {
-      return new Promise((resolve, reject) => {
-        setTimeout(() => {
-          resolve(true);
-        }, ms);
-      });
-    }
+    let errorFlag = 0;
+    let attemptItterations = 0;
     const delayBetweenIterations = 5000;
-
     let clickCounters = new Array(numberOfSessions).fill(0);
     let clickFailedCounters = new Array(numberOfSessions).fill(0);
     let boosterChecks = new Array(numberOfSessions).fill(0);
     let countOfBoosters = new Array(numberOfSessions).fill(0);
     let promises = [];
-    console.log(clickCounters);
-    console.log(clickFailedCounters);
-    console.log(boosterChecks);
+
     async function runIterations() {
       promises = [];
       for (const { page, id } of pages) {
-        //console.log(`Starting new itteration for session: ${id + 1}`);
-        const promise1 = checkAndPurchaseBooster(
-          page,
-          boosterSelections[id].booster,
-          clickCounters[id],
-          id,
-          boosterChecks[id],
-          countOfBoosters[id]
-        );
+        const promise1 = checkAndPurchaseBooster(page, boosterSelections[id].booster, clickCounters[id], id, boosterChecks[id], countOfBoosters[id]);
         promises.push(promise1);
 
-        //console.log("Done checkAndPurchaseBooster for session:", id + 1);
-
-        const promise2 = autoDraw(
-          page,
-          clickCounters[id],
-          clickFailedCounters[id]
-        );
+        const promise2 = autoDraw(page, clickCounters[id], clickFailedCounters[id]);
         promises.push(promise2);
-        //console.log("Done autoDraw for session:", id + 1);
       }
 
       try {
@@ -194,13 +118,11 @@ async function runSessions(
           let index = 0;
           for (const { page, id } of pages) {
             if (boosterSelections[id].asked) {
-              const { clickCounter, boosterCheck, countOfBooster } =
-                results[index];
+              const { clickCounter, boosterCheck, countOfBooster } = results[index];
+              index++;
               clickCounters[id] = clickCounter;
               boosterChecks[id] = boosterCheck;
-              index++;
             }
-
             const { clickCounter, clickFailedCounter } = results[index];
             index++;
             clickCounters[id] = clickCounter;
@@ -210,22 +132,6 @@ async function runSessions(
             }
           }
           console.log(`Error flag: ${errorFlag}`);
-        } else {
-          console.log(`Таймаут промисов`);
-          if (errorFlag > 0 || results == true) {
-            console.error(
-              "\x1b[31m%s\x1b[0m",
-              "Произошла ошибка нажатий:",
-              error
-            );
-            console.log("Закрытие браузеров...");
-            errorFlag++;
-            await runSessions(
-              numberOfSessions,
-              boosterSelections,
-              attempts + 1
-            );
-          }
         }
       } catch (error) {
         console.error("Произошла ошибка:", error);
@@ -234,18 +140,10 @@ async function runSessions(
         attemptItterations++;
       }
       if (attemptItterations > 0) {
-        console.error(
-          "\x1b[31m%s\x1b[0m",
-          "Произошла ошибка нажатий:",
-          error
-        );
+        console.error("\x1b[31m%s\x1b[0m", "Произошла ошибка нажатий:", error);
         console.log("Закрытие браузеров...");
         errorFlag++;
-        await runSessions(
-          numberOfSessions,
-          boosterSelections,
-          attempts + 1
-        );
+        await runSessions(numberOfSessions, boosterSelections, attempts + 1);
       }
       else { setTimeout(runIterations, delayBetweenIterations); }
     }
@@ -254,14 +152,8 @@ async function runSessions(
   } catch (error) {
     console.error("\x1b[31m%s\x1b[0m", "Произошла ошибка:", error);
     console.log("Закрытие браузеров...");
-
     console.log("Повторный запуск с сохраненными данными...");
-    await runSessions(
-      numberOfSessions,
-      boosterSelections,
-      attempts + 1,
-      firstBoosterSelections
-    );
+    await runSessions(numberOfSessions, boosterSelections, attempts + 1, firstBoosterSelections);
   }
 }
 async function main() {
@@ -270,14 +162,9 @@ async function main() {
   let firstBoosterSelections = boosterSelectionsHost;
   let attemptsHost = 0;
   try {
-    const { numberOfSessions, boosterSelections, attempts } = await runSessions(
-      numberOfSessionsHost,
-      boosterSelectionsHost,
-      attemptsHost,
-      firstBoosterSelections
-    );
+    const { numberOfSessions, boosterSelections, attempts } = await runSessions(numberOfSessionsHost, boosterSelectionsHost, attemptsHost, firstBoosterSelections);
     numberOfSessionsHost = numberOfSessions;
-    boosterSelectionsHost = boosterSelections;
+    boosterSelectionsHost = boostesrSelections;
     attemptsHost = attempts;
   } catch (error) {
     // console.error("\x1b[31m%s\x1b[0m", "Произошла ошибка:", error);

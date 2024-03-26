@@ -11,7 +11,6 @@ async function openBrowser(numberOfSessions) {
     if (fs.existsSync(srcValueFileName)) {
       headless = false;
     }
-
     const browser = await puppeteer.launch({
       headless: headless,
       userDataDir: `./user-data-dir${i + 1}`,
