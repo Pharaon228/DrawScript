@@ -11,7 +11,11 @@ async function checkAndPurchaseBooster(
   //console.log(`Для сессии ${id+1} checkActiveBooster : ${hasActiveBooster}`);
   //console.log(`Для сессии ${id+1} balance : ${balance}`);
 
-  if (balance >= chosenBooster.cost && chosenBooster.level != "без бустера" && hasActiveBooster) {
+  if (
+    balance >= chosenBooster.cost &&
+    chosenBooster.level != "без бустера" &&
+    hasActiveBooster
+  ) {
     if (boosterCheck > 10 || boosterCheck === 0) {
       try {
         let boosterLinkButton = false;
@@ -23,41 +27,58 @@ async function checkAndPurchaseBooster(
           "Активный бустер отсутствует. Покупаем бустер..."
         );
 
-        const shopButton = await waitForSelectorWithTimeout(page,
-          'a.MenuItem-yi1zwm-1.AgRZi[href="/shop"]', 5000
+        const shopButton = await waitForSelectorWithTimeout(
+          page,
+          'a.MenuItem-yi1zwm-1.AgRZi[href="/shop"]',
+          5000
         );
         if (shopButton) {
           await page.click('a.MenuItem-yi1zwm-1.AgRZi[href="/shop"]');
           await delay(1000);
         }
         if (shopButton) {
-          boosterLinkButton = await waitForSelectorWithTimeout(page,
+          boosterLinkButton = await waitForSelectorWithTimeout(
+            page,
             chosenBooster.link,
-            { timeout: 5000 }
+            5000
           );
           if (boosterLinkButton) {
             await page.click(chosenBooster.link);
           } else {
-            drawLink = await waitForSelectorWithTimeout(page,
-              'a.MenuItem-yi1zwm-1.AgRZi[href="/squads/e4cdc738-17f5-498c-8900-d5c48d80b910/draw"]', 5000
+            drawLink = await waitForSelectorWithTimeout(
+              page,
+              'a.MenuItem-yi1zwm-1.AgRZi[href="/squads/e4cdc738-17f5-498c-8900-d5c48d80b910/draw"]',
+              5000
             );
             if (drawLink) {
-              console.log(`Для сессии ${id + 1} не удалось открыть магазин. Возврат.`);
-              await page.click('a.MenuItem-yi1zwm-1.AgRZi[href="/squads/e4cdc738-17f5-498c-8900-d5c48d80b910/draw"]');
+              console.log(
+                `Для сессии ${id + 1} не удалось открыть магазин. Возврат.`
+              );
+              await page.click(
+                'a.MenuItem-yi1zwm-1.AgRZi[href="/squads/e4cdc738-17f5-498c-8900-d5c48d80b910/draw"]'
+              );
             }
           }
         }
         if (boosterLinkButton && shopButton) {
-          confirmButton = await waitForSelectorWithTimeout(page,
-            ".BlackButtonStyled-sc-155f8n4-0.gvlQbP", 5000
+          confirmButton = await waitForSelectorWithTimeout(
+            page,
+            ".BlackButtonStyled-sc-155f8n4-0.gvlQbP",
+            5000
           );
           if (confirmButton) {
             await page.click(".BlackButtonStyled-sc-155f8n4-0.gvlQbP");
           } else {
-            backButton = await waitForSelectorWithTimeout(page, '.BackButton-sc-14f29de-4.fzpFcm', 5000);
+            backButton = await waitForSelectorWithTimeout(
+              page,
+              ".BackButton-sc-14f29de-4.fzpFcm",
+              5000
+            );
             if (backButton) {
               await page.click(".BackButton-sc-14f29de-4.fzpFcm");
-              console.log(`Для сессии ${id + 1} не удалось выбрать бустер. Возврат.`);
+              console.log(
+                `Для сессии ${id + 1} не удалось выбрать бустер. Возврат.`
+              );
             }
           }
         }
@@ -69,7 +90,8 @@ async function checkAndPurchaseBooster(
           `Для сессии ${id + 1} Текущий баланс: ${balance}.`
         );
         console.log(
-          `Для сессии ${id + 1
+          `Для сессии ${
+            id + 1
           } за время работы было совершено ${clickCounter} нажатий.`
         );
         if (confirmButton) {
@@ -100,7 +122,11 @@ async function checkAndPurchaseBooster(
 
 async function getCurrentBalance(page) {
   try {
-    const balanceSelector = await waitForSelectorWithTimeout(page, ".AnimatedNumberStyled-sc-98h1so-0.kSpFWd", 5000);
+    const balanceSelector = await waitForSelectorWithTimeout(
+      page,
+      ".AnimatedNumberStyled-sc-98h1so-0.kSpFWd",
+      5000
+    );
     if (balanceSelector) {
       const balanceText = await page.$eval(
         ".AnimatedNumberStyled-sc-98h1so-0.kSpFWd",
@@ -118,10 +144,16 @@ async function getCurrentBalance(page) {
 }
 
 async function checkActiveBooster(page) {
-  const hasActiveBooster = await waitForSelectorWithTimeout(page, ".ActiveBoosterWrapper-sc-13defe5-0.bkpUKH", 2000);
+  const hasActiveBooster = await waitForSelectorWithTimeout(
+    page,
+    ".ActiveBoosterWrapper-sc-13defe5-0.bkpUKH",
+    2000
+  );
   if (hasActiveBooster) {
     return false;
-  } else { return true };
+  } else {
+    return true;
+  }
 }
 function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -134,15 +166,16 @@ async function waitForSelectorWithTimeout(page, selector, timeout = 5000) {
     const endTime = Date.now();
     const elapsedTime = endTime - startTime;
     console.log(`Элемент '${selector}' найден за ${elapsedTime} мс.`);
-    return true
+    return true;
   } catch (error) {
     const endTime = Date.now();
     const elapsedTime = endTime - startTime;
-    console.error(`Ошибка при поиске элемента '${selector}' за ${elapsedTime} мс:`);
+    console.error(
+      `Ошибка при поиске элемента '${selector}' за ${elapsedTime} мс:`
+    );
     return false;
   }
 }
-
 
 module.exports = {
   checkAndPurchaseBooster,
